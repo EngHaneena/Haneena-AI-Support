@@ -1,4 +1,3 @@
 streamlit
 crewai
-langchain-openai
-pydantic==2.10.3
+langchain-google-genai
