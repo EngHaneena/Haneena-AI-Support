@@ -10,12 +10,13 @@ st.title("🤖 Haneena's AI Support")
 if "GOOGLE_API_KEY" in st.secrets:
     google_api_key = st.secrets["GOOGLE_API_KEY"]
     
-    # تعريف المحرك (تعديل الاسم والنسخة لحل الـ 404)
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
-        google_api_key=google_api_key,
-        version="v1"  # لضمان الوصول للموديل الصحيح
-    )
+# استخدام الموديل الأكثر استقراراً لتجاوز خطأ الـ 404
+llm = ChatGoogleGenerativeAI(
+    model="gemini-pro", 
+    google_api_key=st.secrets["GOOGLE_API_KEY"],
+    temperature=0.7,
+    convert_system_message_to_human=True
+)
 
     # تعريف العميل
     support_agent = Agent(
@@ -46,3 +47,4 @@ if "GOOGLE_API_KEY" in st.secrets:
                 st.error(f"Error: {e}")
 else:
     st.warning("Please add GOOGLE_API_KEY to Secrets.")
+
