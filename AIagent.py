@@ -15,12 +15,9 @@ if "GOOGLE_API_KEY" not in st.secrets:
     st.stop()
 
 # تعريف المحرك (Gemini) - تم تعديل المسار لضمان عدم ظهور خطأ 404
-llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash", 
-    google_api_key=st.secrets["GOOGLE_API_KEY"],
-    temperature=0.5
-)
-
+streamlit
+crewai
+langchain-google-genai
 # تعريف العميل (Agent)
 engineer_agent = Agent(
     role='Computer Engineering Expert',
@@ -55,5 +52,6 @@ if user_query:
             
         except Exception as e:
             st.error(f"Error: {e}")
+
 
 st.sidebar.write("🛠️ Developed by: **Eng. Haneena**")
