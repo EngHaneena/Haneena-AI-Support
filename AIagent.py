@@ -1,49 +1,31 @@
-import streamlit as st
-from crewai import Agent, Task, Crew
-from langchain_google_genai import ChatGoogleGenerativeAI
+# ... (الجزء العلوي من الكود كما هو)
 
-# 1. إعداد الصفحة
-st.set_page_config(page_title="Haneena AI Support", layout="wide")
-st.title("🤖 Haneena's AI Support")
-
-# 2. التحقق من المفتاح
-if "GOOGLE_API_KEY" in st.secrets:
-    google_api_key = st.secrets["GOOGLE_API_KEY"]
-    
-    # 3. تعريف المحرك (استخدام Pro لتجنب 404)
+    # 3. تعريف المحرك (تأكدي من استخدام Flash للسرعة إذا لم يظهر خطأ 404)
     llm = ChatGoogleGenerativeAI(
-        model="gemini-pro",
+        model="gemini-1.5-flash", 
         google_api_key=google_api_key,
-        temperature=0.7
+        temperature=0.3 # تقليل الـ temperature يجعل الرد أسرع وأكثر مباشرة
     )
 
-    # 4. تعريف العميل (تأكدي من المسافات هنا)
+    # 4. تعريف العميل (إيقاف verbose=False للسرعة)
     support_agent = Agent(
-        role='Computer Engineering Expert',
-        goal='Help students with technical questions',
-        backstory='Expert in AI and Robotics.',
+        role='Fast Technical Support',
+        goal='Provide quick and accurate technical answers.',
+        backstory='You are a high-speed AI assistant.',
         llm=llm,
         allow_delegation=False,
-        verbose=True
+        verbose=False # تم التغيير لـ False لتقليل وقت المعالجة
     )
 
-    # 5. واجهة المستخدم
-    user_query = st.text_input("Ask your question, Engineer:")
+    # ... (بقية الكود)
 
     if user_query:
-        with st.spinner('Thinking...'):
+        with st.status("🚀 Engineer AI is working...", expanded=True) as status:
             try:
-                task = Task(
-                    description=user_query,
-                    agent=support_agent,
-                    expected_output="A helpful technical response."
-                )
-                crew = Crew(agents=[support_agent], tasks=[task])
+                task = Task(description=user_query, agent=support_agent, expected_output="Short technical answer.")
+                crew = Crew(agents=[support_agent], tasks=[task], verbose=False)
                 result = crew.kickoff()
+                status.update(label="✅ Answer Ready!", state="complete", expanded=False)
                 
-                st.success("Analysis Complete!")
+                st.markdown("### 🤖 Response:")
                 st.write(result.raw)
-            except Exception as e:
-                st.error(f"Error: {e}")
-else:
-    st.warning("Please add GOOGLE_API_KEY to Streamlit Secrets.")
