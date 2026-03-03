@@ -1,68 +1,56 @@
-import os
-from crewai import Agent, Crew, Task
-from langchain_openai import ChatOpenAI
 import streamlit as st
+from crewai import Agent, Task, Crew
+from langchain_google_genai import ChatGoogleGenerativeAI
+import os
 
-# التأكد من المفتاح
-os.environ["OPENAI_API_KEY"] = "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"
+# إعداد واجهة Streamlit
+st.set_page_config(page_title="AI Computer Engineer Support", layout="wide")
+st.title("🤖 Haneena's AI Agent Support")
+st.subheader("Powered by Gemini 1.5 Flash")
 
-st.set_page_config(page_title="Haneena`s AI", layout="centered")
+# الحصول على المفتاح من Secrets
+google_api_key = st.secrets["GOOGLE_API_KEY"]
 
-# CSS بسيط وناعم
-st.markdown("""
-    <style>
-    .main { background-color: #0e1117; }
-    h1 { color: #21d4fd; text-align: center; font-size: 26px !important; }
-    .stButton>button { width: 100%; border-radius: 12px; background: linear-gradient(45deg, #7b2ff7, #21d4fd); color: white; }
-    </style>
-    """, unsafe_allow_html=True)
+# تعريف محرك Gemini
+llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash",
+    google_api_key=google_api_key
+)
 
-def main():
-    st.title("Haneena`s AI Support")
-    st.markdown("---")
+# 1. تعريف العميل (Agent)
+support_agent = Agent(
+    role='Technical Support Specialist',
+    goal='Provide accurate and helpful technical advice to computer engineering students',
+    backstory='You are an expert computer engineer with deep knowledge in AI, Robotics, and Software.',
+    allow_delegation=False,
+    verbose=True,
+    llm=llm
+)
 
-    llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0.5)
+# واجهة المستخدم لإدخال السؤال
+user_input = st.text_input("How can I help you today, Engineer?")
 
-    c1, c2 = st.columns(2)
-    with c1:
-        customer_name = st.text_input("Client Name")
-    with c2:
-        language = st.selectbox("Language", ["Arabic", "English"])
+if user_input:
+    with st.spinner('Thinking...'):
+        # 2. تعريف المهمة (Task)
+        task = Task(
+            description=f"Answer the following user query professionally: {user_input}",
+            agent=support_agent,
+            expected_output="A concise and helpful technical response."
+        )
 
-    query = st.text_area("How can we help?")
+        # 3. تشغيل الفريق (Crew)
+        crew = Crew(
+            agents=[support_agent],
+            tasks=[task]
+        )
+        
+        result = crew.kickoff()
+        
+        # عرض النتيجة
+        st.success("Analysis Complete!")
+        st.markdown(f"### 🤖 AI Response:\n{result}")
 
-    if st.button("🚀 Run Haneena`s Team"):
-        if customer_name and query:
-            # وكيل الدعم
-            support_agent = Agent(
-                role="Technical Specialist",
-                goal="Solve issues",
-                backstory=f"Part of Haneena`s team assisting {customer_name}",
-                llm=llm,
-                verbose=True
-            )
-            # وكيل الجودة
-            qa_agent = Agent(
-                role="QA Reviewer",
-                goal="Refine solution",
-                backstory="Ensures high quality for Haneena`s clients",
-                llm=llm,
-                verbose=True
-            )
-
-            # المهام
-            task1 = Task(description=query, expected_output="Technical draft", agent=support_agent)
-            task2 = Task(description=f"Refine in {language}", expected_output="Final response", agent=qa_agent, context=[task1])
-
-            crew = Crew(agents=[support_agent, qa_agent], tasks=[task1, task2])
-            
-            with st.spinner("Processing..."):
-                result = crew.kickoff()
-            
-            st.info(result)
-            st.download_button("📥 Download", str(result), file_name="Report.txt")
-        else:
-            st.warning("Fill all fields!")
-
-if __name__ == "__main__":
-    main()
+st.sidebar.markdown("---")
+st.sidebar.write("🛠️ Created by: **Eng. Haneena**")
+st.sidebar.write("📚 Computer Engineering Project")
