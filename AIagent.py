@@ -1,31 +1,35 @@
-# ... (الجزء العلوي من الكود كما هو)
+import streamlit as st
+from crewai import Agent, Task, Crew
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-    # 3. تعريف المحرك (تأكدي من استخدام Flash للسرعة إذا لم يظهر خطأ 404)
+# 1. إعدادات الصفحة (التصميم)
+st.set_page_config(page_title="Haneena AI Support", page_icon="🤖", layout="centered")
+
+st.title("🤖 Haneena's Engineering AI")
+st.markdown("---")
+
+# 2. جلب المفتاح من Secrets
+if "GOOGLE_API_KEY" in st.secrets:
+    google_api_key = st.secrets["GOOGLE_API_KEY"]
+    
+    # 3. تعريف المحرك (استخدام Flash للسرعة مع معالجة خطأ 404)
+    # أضفنا سطر version="v1" لضمان التوافق التام
     llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash", 
+        model="gemini-1.5-flash",
         google_api_key=google_api_key,
-        temperature=0.3 # تقليل الـ temperature يجعل الرد أسرع وأكثر مباشرة
+        version="v1",
+        temperature=0.3
     )
 
-    # 4. تعريف العميل (إيقاف verbose=False للسرعة)
+    # 4. تعريف العميل الذكي (Agent)
+    # تم إيقاف verbose لزيادة السرعة
     support_agent = Agent(
-        role='Fast Technical Support',
-        goal='Provide quick and accurate technical answers.',
-        backstory='You are a high-speed AI assistant.',
+        role='Computer Engineering Expert',
+        goal='Provide fast and accurate technical support.',
+        backstory='You are a helpful AI assistant specialized in Computer Engineering and Robotics.',
         llm=llm,
         allow_delegation=False,
-        verbose=False # تم التغيير لـ False لتقليل وقت المعالجة
+        verbose=False
     )
 
-    # ... (بقية الكود)
-
-    if user_query:
-        with st.status("🚀 Engineer AI is working...", expanded=True) as status:
-            try:
-                task = Task(description=user_query, agent=support_agent, expected_output="Short technical answer.")
-                crew = Crew(agents=[support_agent], tasks=[task], verbose=False)
-                result = crew.kickoff()
-                status.update(label="✅ Answer Ready!", state="complete", expanded=False)
-                
-                st.markdown("### 🤖 Response:")
-                st.write(result.raw)
+    # 5. واجهة المستخدم المدخلات
