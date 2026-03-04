@@ -1,64 +1,65 @@
 import streamlit as st
 import os
 
-# --- حل مشكلة الـ Signal والجلسات (يجب أن يكون في أعلى الملف) ---
+# تعطيل الخصائص التي تسبب أخطاء الـ Signal والـ Thread قبل استدعاء المكتبات
 os.environ["OTEL_SDK_DISABLED"] = "true"
 os.environ["PYDANTIC_SKIP_VALIDATION"] = "true"
 
 from crewai import Agent, Task, Crew, Process
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-st.set_page_config(page_title="Haneena AI", layout="centered")
+# إعداد الصفحة
+st.set_page_config(page_title="Haneena AI", page_icon="🤖")
 st.title("🤖 Engineering AI Support")
 
+# التحقق من المفتاح
 if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
     
-    user_query = st.text_input("Ask me anything:", placeholder="Type here...")
+    query = st.text_input("How can I help you?", placeholder="Type your technical question...")
 
-    if user_query:
-        with st.status("🚀 Engine starting...", expanded=False) as status:
+    if query:
+        with st.status("🚀 Processing...", expanded=True) as status:
             try:
-                # تعريف الموديل
+                # محرك البحث (الربط المباشر)
                 llm = ChatGoogleGenerativeAI(
                     model="gemini-1.5-flash", 
                     google_api_key=api_key
                 )
 
-                # تعريف العميل
-                engineer_agent = Agent(
+                # العميل
+                eng_agent = Agent(
                     role='Senior Engineer',
-                    goal='Provide technical solutions',
+                    goal='Solve technical problems',
                     backstory='Expert assistant',
                     llm=llm,
-                    allow_delegation=False,
-                    verbose=False
+                    allow_delegation=False
                 )
 
                 # المهمة
-                tech_task = Task(
-                    description=user_query,
-                    agent=engineer_agent,
-                    expected_output="Direct technical answer"
+                task = Task(
+                    description=query,
+                    agent=eng_agent,
+                    expected_output="Clear technical response"
                 )
 
-                # الفريق - الحل هنا بوضع الاختصارات المطلوبة
+                # الفريق (إعدادات الأمان لـ Streamlit)
                 crew = Crew(
-                    agents=[engineer_agent],
-                    tasks=[tech_task],
+                    agents=[eng_agent],
+                    tasks=[task],
                     process=Process.sequential,
-                    share_crew=False # منع مشاركة البيانات وحل مشاكل الخيوط
+                    share_crew=False # أهم سطر لحل مشكلة الـ Signal
                 )
                 
-                # تنفيذ المهمة
-                result = crew.kickoff()
+                # تنفيذ
+                response = crew.kickoff()
                 
-                status.update(label="✅ Success!", state="complete")
-                st.markdown("### 🤖 Response:")
-                st.info(result.raw)
+                status.update(label="✅ Done!", state="complete")
+                st.success("### 🤖 Response:")
+                st.write(response.raw)
                 
             except Exception as e:
                 st.error(f"Error: {e}")
                 status.update(label="❌ Failed", state="error")
 else:
-    st.error("Please add the API Key to Streamlit Secrets!")
+    st.warning("⚠️ Please add GOOGLE_API_KEY to App Secrets.")
