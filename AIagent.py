@@ -1,60 +1,64 @@
 import streamlit as st
-from crewai import Agent, Task, Crew, Process
-from langchain_google_genai import ChatGoogleGenerativeAI
 import os
 
-# 1. إعداد الصفحة
-st.set_page_config(page_title="Haneena AI Support", page_icon="🤖")
-
-st.title("🤖 Haneena's Engineering AI")
-
-# 2. حل مشكلة الـ Signal والـ API
+# --- حل مشكلة الـ Signal والجلسات (يجب أن يكون في أعلى الملف) ---
 os.environ["OTEL_SDK_DISABLED"] = "true"
+os.environ["PYDANTIC_SKIP_VALIDATION"] = "true"
+
+from crewai import Agent, Task, Crew, Process
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+st.set_page_config(page_title="Haneena AI", layout="centered")
+st.title("🤖 Engineering AI Support")
 
 if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
     
-    user_query = st.text_input("How can I help you?", placeholder="Ask me anything...")
+    user_query = st.text_input("Ask me anything:", placeholder="Type here...")
 
     if user_query:
-        with st.status("🚀 Working...", expanded=False) as status:
+        with st.status("🚀 Engine starting...", expanded=False) as status:
             try:
-                # 3. تعريف المحرك (تغيير الاسم ليصبح مباشر)
+                # تعريف الموديل
                 llm = ChatGoogleGenerativeAI(
-                    model="gemini-1.5-flash", # لا تكتبي models/ ولا gemini/ هنا
-                    google_api_key=api_key,
-                    temperature=0.3
+                    model="gemini-1.5-flash", 
+                    google_api_key=api_key
                 )
 
-                # 4. تعريف العميل
-                agent = Agent(
-                    role='Expert Engineer',
-                    goal='Technical support',
-                    backstory='Helpful assistant.',
+                # تعريف العميل
+                engineer_agent = Agent(
+                    role='Senior Engineer',
+                    goal='Provide technical solutions',
+                    backstory='Expert assistant',
                     llm=llm,
-                    verbose=False,
-                    allow_delegation=False
+                    allow_delegation=False,
+                    verbose=False
                 )
 
-                # 5. المهمة
-                task = Task(description=user_query, agent=agent, expected_output="Technical answer.")
+                # المهمة
+                tech_task = Task(
+                    description=user_query,
+                    agent=engineer_agent,
+                    expected_output="Direct technical answer"
+                )
 
-                # 6. التشغيل
+                # الفريق - الحل هنا بوضع الاختصارات المطلوبة
                 crew = Crew(
-                    agents=[agent],
-                    tasks=[task],
-                    verbose=False,
-                    share_crew=False
+                    agents=[engineer_agent],
+                    tasks=[tech_task],
+                    process=Process.sequential,
+                    share_crew=False # منع مشاركة البيانات وحل مشاكل الخيوط
                 )
                 
+                # تنفيذ المهمة
                 result = crew.kickoff()
                 
                 status.update(label="✅ Success!", state="complete")
+                st.markdown("### 🤖 Response:")
                 st.info(result.raw)
                 
             except Exception as e:
-                # إذا استمر الـ 404، جربي تغيير الموديل لـ gemini-pro يدوياً هنا
                 st.error(f"Error: {e}")
                 status.update(label="❌ Failed", state="error")
 else:
-    st.error("Add GOOGLE_API_KEY to Secrets!")
+    st.error("Please add the API Key to Streamlit Secrets!")
