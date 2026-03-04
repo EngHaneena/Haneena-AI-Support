@@ -18,7 +18,7 @@ if "GOOGLE_API_KEY" in st.secrets:
     if user_query:
         with st.status("🚀 Processing with CrewAI...", expanded=False) as status:
             try:
-                # 3. تعريف المحرك (استخدام المسار الكامل والنسخة v1)
+                # 3. تعريف المحرك
                 llm = ChatGoogleGenerativeAI(
                     model="models/gemini-1.5-flash",
                     google_api_key=google_api_key,
@@ -26,13 +26,13 @@ if "GOOGLE_API_KEY" in st.secrets:
                     temperature=0.3
                 )
 
-                # 4. تعريف العميل (Agent) - حل مشكلة LiteLLM Fallback
+                # 4. تعريف العميل (Agent)
                 support_agent = Agent(
                     role='Computer Engineering Expert',
                     goal='Provide accurate technical support.',
                     backstory='You are a professional AI mentor specialized in Engineering.',
                     llm=llm,
-                    function_calling_llm=llm, # هذا السطر يمنع الخطأ
+                    function_calling_llm=llm,
                     allow_delegation=False,
                     verbose=False
                 )
@@ -44,7 +44,7 @@ if "GOOGLE_API_KEY" in st.secrets:
                     expected_output="A helpful and concise technical response."
                 )
 
-                # 6. تشغيل الفريق (Crew) - تحديد الـ Process بوضوح
+                # 6. تشغيل الفريق (Crew)
                 crew = Crew(
                     agents=[support_agent],
                     tasks=[task],
@@ -59,4 +59,12 @@ if "GOOGLE_API_KEY" in st.secrets:
                 st.markdown("### 🤖 Response:")
                 st.info(result.raw)
                 
-            except Exception as e
+            except Exception as e:
+                st.error(f"System Error: {e}")
+                status.update(label="❌ Error occurred", state="error")
+else:
+    st.warning("⚠️ Please add GOOGLE_API_KEY to Streamlit Secrets.")
+
+st.sidebar.markdown("---")
+st.sidebar.write("🛠️ Developed by: **Eng. Haneena**")
+
