@@ -18,15 +18,15 @@ if "GOOGLE_API_KEY" in st.secrets:
     if user_query:
         with st.status("🚀 Processing with CrewAI...", expanded=False) as status:
             try:
-                # 3. تعريف المحرك
+                # 3. تعريف المحرك (إضافة gemini/ لحل مشكلة Provider NOT provided)
                 llm = ChatGoogleGenerativeAI(
-                    model="models/gemini-1.5-flash",
+                    model="gemini/gemini-1.5-flash",
                     google_api_key=google_api_key,
                     version="v1",
                     temperature=0.3
                 )
 
-                # 4. تعريف العميل (Agent)
+                # 4. تعريف العميل (Agent) - ربط الـ LLM لضمان عدم حدوث Fallback
                 support_agent = Agent(
                     role='Computer Engineering Expert',
                     goal='Provide accurate technical support.',
@@ -56,15 +56,22 @@ if "GOOGLE_API_KEY" in st.secrets:
                 
                 status.update(label="✅ Success!", state="complete")
                 
+                # 8. عرض النتيجة
                 st.markdown("### 🤖 Response:")
                 st.info(result.raw)
                 
             except Exception as e:
+                # التأكد من وجود النقطتين الرأسيتين هنا لإصلاح الـ SyntaxError السابق
                 st.error(f"System Error: {e}")
                 status.update(label="❌ Error occurred", state="error")
 else:
     st.warning("⚠️ Please add GOOGLE_API_KEY to Streamlit Secrets.")
 
+# تذييل الصفحة
 st.sidebar.markdown("---")
 st.sidebar.write("🛠️ Developed by: **Eng. Haneena**")
+st.sidebar.info("Framework: CrewAI + Gemini 1.5")
+st.sidebar.markdown("---")
+st.sidebar.write("🛠️ Developed by: **Eng. Haneena**")
+
 
