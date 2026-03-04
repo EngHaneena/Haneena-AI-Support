@@ -1,4 +1,5 @@
 streamlit
 crewai
 langchain-google-genai>=1.0.7
+litellm
 pydantic<3.0.0
