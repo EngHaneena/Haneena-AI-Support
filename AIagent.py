@@ -3,14 +3,16 @@ from crewai import Agent, Task, Crew, Process
 from langchain_google_genai import ChatGoogleGenerativeAI
 import os
 
-# 1. إعداد الصفحة
+# 1. إعدادات الصفحة
 st.set_page_config(page_title="Haneena AI Support", page_icon="🤖", layout="centered")
 
 st.title("🤖 Haneena's Engineering AI")
 st.markdown("---")
 
-# 2. إعدادات البيئة لحل مشكلة الـ Signal والـ 404
+# 2. إعدادات البيئة (مهمة جداً لتعريف المزود لـ LiteLLM)
 os.environ["OTEL_SDK_DISABLED"] = "true"
+# هذا السطر يخبر CrewAI أن يستخدم Google Gemini مباشرة
+os.environ["GEMINI_API_KEY"] = st.secrets.get("GOOGLE_API_KEY", "")
 
 # 3. التحقق من المفتاح في Secrets
 if "GOOGLE_API_KEY" in st.secrets:
@@ -21,8 +23,7 @@ if "GOOGLE_API_KEY" in st.secrets:
     if user_query:
         with st.status("🚀 Processing with CrewAI...", expanded=False) as status:
             try:
-                # 4. الحل البديل والأكثر استقراراً: استدعاء الموديل باسمه المباشر
-                # قمنا بإزالة gemini/ واستخدمنا الاسم الذي تطلبه النسخة المستقرة
+                # 4. تعريف المحرك بصيغة "google_generative_ai" لضمان التوافق
                 llm = ChatGoogleGenerativeAI(
                     model="gemini-1.5-flash", 
                     google_api_key=api_key,
@@ -30,11 +31,13 @@ if "GOOGLE_API_KEY" in st.secrets:
                 )
 
                 # 5. تعريف العميل (Agent)
+                # أضفنا سطر الموديل بالصيغة التي تحبها مكتبة LiteLLM
                 support_agent = Agent(
                     role='Computer Engineering Expert',
                     goal='Provide accurate technical support.',
                     backstory='You are a professional AI mentor specialized in Engineering.',
                     llm=llm,
+                    model_name="gemini/gemini-1.5-flash", # هذه الصيغة تحل مشكلة الـ Provider
                     allow_delegation=False,
                     verbose=False
                 )
@@ -47,7 +50,6 @@ if "GOOGLE_API_KEY" in st.secrets:
                 )
 
                 # 7. تشغيل الفريق (Crew)
-                # أضفنا share_crew=False لتجنب مشاكل الخيوط (Threads)
                 crew = Crew(
                     agents=[support_agent],
                     tasks=[task],
@@ -64,13 +66,14 @@ if "GOOGLE_API_KEY" in st.secrets:
                 st.info(result.raw)
                 
             except Exception as e:
-                # محاولة أخيرة: إذا فشل الموديل، جربي gemini-pro
                 st.error(f"System Error: {e}")
-                st.warning("🔄 Tip: If 404 persists, the API might be restricted in your region for this model.")
                 status.update(label="❌ Error occurred", state="error")
 else:
     st.warning("⚠️ Please add GOOGLE_API_KEY to Streamlit Secrets.")
 
 st.sidebar.markdown("---")
 st.sidebar.write("🛠️ Developed by: **Eng. Haneena**")
+st.sidebar.markdown("---")
+st.sidebar.write("🛠️ Developed by: **Eng. Haneena**")
+
 
