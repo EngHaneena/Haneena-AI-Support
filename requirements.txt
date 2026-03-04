@@ -1,5 +1,5 @@
 streamlit
-crewai
-langchain-google-genai==2.0.0
-litellm
+crewai==0.28.8
+langchain-google-genai==1.0.3
+litellm==1.35.32
 pydantic<3.0.0
