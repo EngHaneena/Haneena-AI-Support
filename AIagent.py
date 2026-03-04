@@ -1,65 +1,40 @@
 import streamlit as st
-import os
-
-# تعطيل الخصائص التي تسبب أخطاء الـ Signal والـ Thread قبل استدعاء المكتبات
-os.environ["OTEL_SDK_DISABLED"] = "true"
-os.environ["PYDANTIC_SKIP_VALIDATION"] = "true"
-
-from crewai import Agent, Task, Crew, Process
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage
 
-# إعداد الصفحة
-st.set_page_config(page_title="Haneena AI", page_icon="🤖")
-st.title("🤖 Engineering AI Support")
+# 1. إعداد الصفحة
+st.set_page_config(page_title="Haneena AI Support", page_icon="🤖")
+st.title("🤖 Haneena's Engineering AI")
+st.markdown("---")
 
-# التحقق من المفتاح
+# 2. التحقق من المفتاح في Secrets
 if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
     
-    query = st.text_input("How can I help you?", placeholder="Type your technical question...")
+    user_query = st.text_input("How can I help you today, Engineer?", placeholder="Ask your technical question...")
 
-    if query:
-        with st.status("🚀 Processing...", expanded=True) as status:
+    if user_query:
+        with st.spinner("🚀 Thinking..."):
             try:
-                # محرك البحث (الربط المباشر)
+                # 3. الاتصال المباشر والمستقر بـ Gemini
                 llm = ChatGoogleGenerativeAI(
-                    model="gemini-1.5-flash", 
-                    google_api_key=api_key
+                    model="gemini-1.5-flash",
+                    google_api_key=api_key,
+                    temperature=0.3
                 )
 
-                # العميل
-                eng_agent = Agent(
-                    role='Senior Engineer',
-                    goal='Solve technical problems',
-                    backstory='Expert assistant',
-                    llm=llm,
-                    allow_delegation=False
-                )
-
-                # المهمة
-                task = Task(
-                    description=query,
-                    agent=eng_agent,
-                    expected_output="Clear technical response"
-                )
-
-                # الفريق (إعدادات الأمان لـ Streamlit)
-                crew = Crew(
-                    agents=[eng_agent],
-                    tasks=[task],
-                    process=Process.sequential,
-                    share_crew=False # أهم سطر لحل مشكلة الـ Signal
-                )
+                # 4. إرسال السؤال والحصول على الإجابة
+                response = llm.invoke([HumanMessage(content=user_query)])
                 
-                # تنفيذ
-                response = crew.kickoff()
-                
-                status.update(label="✅ Done!", state="complete")
+                # 5. عرض النتيجة
                 st.success("### 🤖 Response:")
-                st.write(response.raw)
+                st.write(response.content)
                 
             except Exception as e:
                 st.error(f"Error: {e}")
-                status.update(label="❌ Failed", state="error")
+                st.info("Tip: If you see 404, try changing the model to 'gemini-pro' in the code.")
 else:
-    st.warning("⚠️ Please add GOOGLE_API_KEY to App Secrets.")
+    st.warning("⚠️ Please add GOOGLE_API_KEY to Streamlit Secrets.")
+
+st.sidebar.markdown("---")
+st.sidebar.write("🛠️ Developed by: **Eng. Haneena**")
