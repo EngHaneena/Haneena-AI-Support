@@ -1,7 +1,6 @@
 import streamlit as st
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import HumanMessage
-import os
+import requests
+import json
 
 # 1. إعداد الصفحة
 st.set_page_config(page_title="Haneena AI Support", page_icon="🤖")
@@ -15,27 +14,34 @@ if "GOOGLE_API_KEY" in st.secrets:
     user_query = st.text_input("How can I help you today, Engineer?", placeholder="Ask your technical question...")
 
     if user_query:
-        with st.spinner("🚀 Connecting to Gemini v1..."):
+        with st.spinner("🚀 Direct Connection to Gemini..."):
             try:
-                # 3. الحل الذهبي: تحديد الموديل والنسخة v1 لضمان التوافق
-                llm = ChatGoogleGenerativeAI(
-                    model="gemini-1.5-pro", # استخدام النسخة الاحترافية الأحدث
-                    google_api_key=api_key,
-                    version="v1",          # إجبار المكتبة على استخدام المسار المستقر وليس beta
-                    temperature=0.3
-                )
+                # 3. الاتصال المباشر عبر API (بدون مكتبات وسيطة)
+                # نستخدم مسار v1 المستقر مباشرة
+                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                
+                headers = {'Content-Type': 'application/json'}
+                data = {
+                    "contents": [{
+                        "parts": [{"text": user_query}]
+                    }]
+                }
 
-                # 4. الحصول على الإجابة
-                response = llm.invoke([HumanMessage(content=user_query)])
-                
-                # 5. العرض
-                st.success("### 🤖 Response:")
-                st.write(response.content)
-                
+                response = requests.post(url, headers=headers, data=json.dumps(data))
+                result = response.json()
+
+                # 4. معالجة النتيجة وعرضها
+                if response.status_code == 200:
+                    answer = result['candidates'][0]['content']['parts'][0]['text']
+                    st.success("### 🤖 Response:")
+                    st.write(answer)
+                else:
+                    # إظهار الخطأ القادم من قوقل بوضوح
+                    error_msg = result.get('error', {}).get('message', 'Unknown Error')
+                    st.error(f"Google API Error: {error_msg}")
+                    
             except Exception as e:
-                # محاولة تلقائية أخيرة في حال وجود خلل في تعريف الموديل
-                st.error(f"Error: {e}")
-                st.info("🔄 Try refreshing the page if the error persists.")
+                st.error(f"Connection Error: {e}")
 else:
     st.warning("⚠️ Please add GOOGLE_API_KEY to Streamlit Secrets.")
 
