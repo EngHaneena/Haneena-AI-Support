@@ -14,11 +14,10 @@ if "GOOGLE_API_KEY" in st.secrets:
     user_query = st.text_input("How can I help you today, Engineer?", placeholder="Ask your technical question...")
 
     if user_query:
-        with st.spinner("🚀 Direct Connection to Gemini..."):
+        with st.spinner("🚀 Connecting to Google Gemini Pro..."):
             try:
-                # 3. الاتصال المباشر عبر API (بدون مكتبات وسيطة)
-                # نستخدم مسار v1 المستقر مباشرة
-                url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+                # 3. الرابط المباشر لموديل gemini-pro (الأكثر استقراراً)
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
                 
                 headers = {'Content-Type': 'application/json'}
                 data = {
@@ -32,9 +31,13 @@ if "GOOGLE_API_KEY" in st.secrets:
 
                 # 4. معالجة النتيجة وعرضها
                 if response.status_code == 200:
-                    answer = result['candidates'][0]['content']['parts'][0]['text']
-                    st.success("### 🤖 Response:")
-                    st.write(answer)
+                    # التحقق من وجود محتوى في الرد
+                    if 'candidates' in result and result['candidates']:
+                        answer = result['candidates'][0]['content']['parts'][0]['text']
+                        st.success("### 🤖 Response:")
+                        st.write(answer)
+                    else:
+                        st.warning("⚠️ Google returned an empty response. Try rephrasing.")
                 else:
                     # إظهار الخطأ القادم من قوقل بوضوح
                     error_msg = result.get('error', {}).get('message', 'Unknown Error')
@@ -47,3 +50,6 @@ else:
 
 st.sidebar.markdown("---")
 st.sidebar.write("🛠️ Developed by: **Eng. Haneena**")
+st.sidebar.markdown("---")
+st.sidebar.write("🛠️ Developed by: **Eng. Haneena**")
+
