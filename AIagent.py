@@ -9,21 +9,20 @@ st.set_page_config(page_title="Haneena AI Support", page_icon="🤖", layout="ce
 st.title("🤖 Haneena's Engineering AI")
 st.markdown("---")
 
-# 2. إعدادات البيئة (مهمة جداً لتعريف المزود لـ LiteLLM)
+# 2. إعدادات البيئة
 os.environ["OTEL_SDK_DISABLED"] = "true"
-# هذا السطر يخبر CrewAI أن يستخدم Google Gemini مباشرة
-os.environ["GEMINI_API_KEY"] = st.secrets.get("GOOGLE_API_KEY", "")
 
 # 3. التحقق من المفتاح في Secrets
 if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
+    os.environ["GEMINI_API_KEY"] = api_key # احتياط لـ LiteLLM
     
-    user_query = st.text_input("How can I help you today, Engineer?", placeholder="Ask your technical question...")
+    user_query = st.text_input("How can I help you today, Engineer?", placeholder="Ask your question...")
 
     if user_query:
-        with st.status("🚀 Processing with CrewAI...", expanded=False) as status:
+        with st.status("🚀 Processing...", expanded=False) as status:
             try:
-                # 4. تعريف المحرك بصيغة "google_generative_ai" لضمان التوافق
+                # 4. تعريف المحرك (الصيغة الأكثر استقراراً)
                 llm = ChatGoogleGenerativeAI(
                     model="gemini-1.5-flash", 
                     google_api_key=api_key,
@@ -31,49 +30,37 @@ if "GOOGLE_API_KEY" in st.secrets:
                 )
 
                 # 5. تعريف العميل (Agent)
-                # أضفنا سطر الموديل بالصيغة التي تحبها مكتبة LiteLLM
                 support_agent = Agent(
                     role='Computer Engineering Expert',
-                    goal='Provide accurate technical support.',
-                    backstory='You are a professional AI mentor specialized in Engineering.',
+                    goal='Provide technical support.',
+                    backstory='Expert AI assistant.',
                     llm=llm,
-                    model_name="gemini/gemini-1.5-flash", # هذه الصيغة تحل مشكلة الـ Provider
+                    # نستخدم محرك البحث عن الموديل داخلياً لـ CrewAI
+                    model_name="gemini/gemini-1.5-flash",
                     allow_delegation=False,
                     verbose=False
                 )
 
-                # 6. تعريف المهمة (Task)
-                task = Task(
-                    description=user_query,
-                    agent=support_agent,
-                    expected_output="A helpful and concise technical response."
-                )
+                # 6. المهمة
+                task = Task(description=user_query, agent=support_agent, expected_output="Technical response.")
 
-                # 7. تشغيل الفريق (Crew)
+                # 7. الفريق
                 crew = Crew(
                     agents=[support_agent],
                     tasks=[task],
                     process=Process.sequential,
-                    verbose=False,
                     share_crew=False
                 )
                 
                 result = crew.kickoff()
                 
-                status.update(label="✅ Success!", state="complete")
-                
+                status.update(label="✅ Done!", state="complete")
                 st.markdown("### 🤖 Response:")
                 st.info(result.raw)
                 
             except Exception as e:
-                st.error(f"System Error: {e}")
-                status.update(label="❌ Error occurred", state="error")
+                st.error(f"Error: {e}")
+                status.update(label="❌ Failed", state="error")
 else:
-    st.warning("⚠️ Please add GOOGLE_API_KEY to Streamlit Secrets.")
-
-st.sidebar.markdown("---")
-st.sidebar.write("🛠️ Developed by: **Eng. Haneena**")
-st.sidebar.markdown("---")
-st.sidebar.write("🛠️ Developed by: **Eng. Haneena**")
-
+    st.error("⚠️ Add GOOGLE_API_KEY to Secrets first!")
 
