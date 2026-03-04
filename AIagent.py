@@ -3,64 +3,58 @@ from crewai import Agent, Task, Crew, Process
 from langchain_google_genai import ChatGoogleGenerativeAI
 import os
 
-# 1. إعدادات الصفحة
-st.set_page_config(page_title="Haneena AI Support", page_icon="🤖", layout="centered")
+# 1. إعداد الصفحة
+st.set_page_config(page_title="Haneena AI Support", page_icon="🤖")
 
 st.title("🤖 Haneena's Engineering AI")
-st.markdown("---")
 
-# 2. إعدادات البيئة
+# 2. حل مشكلة الـ Signal والـ API
 os.environ["OTEL_SDK_DISABLED"] = "true"
 
-# 3. التحقق من المفتاح في Secrets
 if "GOOGLE_API_KEY" in st.secrets:
     api_key = st.secrets["GOOGLE_API_KEY"]
-    os.environ["GEMINI_API_KEY"] = api_key # احتياط لـ LiteLLM
     
-    user_query = st.text_input("How can I help you today, Engineer?", placeholder="Ask your question...")
+    user_query = st.text_input("How can I help you?", placeholder="Ask me anything...")
 
     if user_query:
-        with st.status("🚀 Processing...", expanded=False) as status:
+        with st.status("🚀 Working...", expanded=False) as status:
             try:
-                # 4. تعريف المحرك (الصيغة الأكثر استقراراً)
+                # 3. تعريف المحرك (تغيير الاسم ليصبح مباشر)
                 llm = ChatGoogleGenerativeAI(
-                    model="gemini-1.5-flash", 
+                    model="gemini-1.5-flash", # لا تكتبي models/ ولا gemini/ هنا
                     google_api_key=api_key,
                     temperature=0.3
                 )
 
-                # 5. تعريف العميل (Agent)
-                support_agent = Agent(
-                    role='Computer Engineering Expert',
-                    goal='Provide technical support.',
-                    backstory='Expert AI assistant.',
+                # 4. تعريف العميل
+                agent = Agent(
+                    role='Expert Engineer',
+                    goal='Technical support',
+                    backstory='Helpful assistant.',
                     llm=llm,
-                    # نستخدم محرك البحث عن الموديل داخلياً لـ CrewAI
-                    model_name="gemini/gemini-1.5-flash",
-                    allow_delegation=False,
-                    verbose=False
+                    verbose=False,
+                    allow_delegation=False
                 )
 
-                # 6. المهمة
-                task = Task(description=user_query, agent=support_agent, expected_output="Technical response.")
+                # 5. المهمة
+                task = Task(description=user_query, agent=agent, expected_output="Technical answer.")
 
-                # 7. الفريق
+                # 6. التشغيل
                 crew = Crew(
-                    agents=[support_agent],
+                    agents=[agent],
                     tasks=[task],
-                    process=Process.sequential,
+                    verbose=False,
                     share_crew=False
                 )
                 
                 result = crew.kickoff()
                 
-                status.update(label="✅ Done!", state="complete")
-                st.markdown("### 🤖 Response:")
+                status.update(label="✅ Success!", state="complete")
                 st.info(result.raw)
                 
             except Exception as e:
+                # إذا استمر الـ 404، جربي تغيير الموديل لـ gemini-pro يدوياً هنا
                 st.error(f"Error: {e}")
                 status.update(label="❌ Failed", state="error")
 else:
-    st.error("⚠️ Add GOOGLE_API_KEY to Secrets first!")
-
+    st.error("Add GOOGLE_API_KEY to Secrets!")
