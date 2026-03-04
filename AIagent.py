@@ -16,9 +16,9 @@ if "GOOGLE_API_KEY" in st.secrets:
     if user_query:
         with st.spinner("🚀 Thinking..."):
             try:
-                # 3. الاتصال المباشر والمستقر بـ Gemini
+                # 3. استخدام الموديل المستقر gemini-pro لحل مشكلة الـ 404
                 llm = ChatGoogleGenerativeAI(
-                    model="gemini-1.5-flash",
+                    model="gemini-pro", # تم التغيير من flash إلى pro للاستقرار
                     google_api_key=api_key,
                     temperature=0.3
                 )
@@ -32,7 +32,7 @@ if "GOOGLE_API_KEY" in st.secrets:
                 
             except Exception as e:
                 st.error(f"Error: {e}")
-                st.info("Tip: If you see 404, try changing the model to 'gemini-pro' in the code.")
+                st.info("⚠️ Note: If this persists, please double-check your API key in Streamlit Secrets.")
 else:
     st.warning("⚠️ Please add GOOGLE_API_KEY to Streamlit Secrets.")
 
